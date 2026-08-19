@@ -91,6 +91,12 @@ export async function saveSession(
   return session;
 }
 
+/** Delete a chat session from Redis — returns true if key existed */
+export async function deleteSession(sessionId: string): Promise<boolean> {
+  const deleted = await redis.del(`chat:session:${sessionId}`);
+  return deleted > 0;
+}
+
 // Vector storage for RAG
 export async function storeVector(id: string, vector: number[], metadata: FAQMetadata): Promise<void> {
   await redis.hset(`chat:vectors:${id}`, {

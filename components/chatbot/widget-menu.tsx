@@ -88,7 +88,6 @@ export function WidgetMenu() {
   const handleClearChat = () => {
     clearChat();
     setMenuOpen(false);
-    toast.success("Chat cleared");
   };
 
   const handleExportText = () => {
@@ -123,7 +122,6 @@ export function WidgetMenu() {
   const handleNewChat = () => {
     clearChat();
     setMenuOpen(false);
-    toast.success("Started new chat");
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

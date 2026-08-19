@@ -33,16 +33,25 @@ git push -u origin main
    - `GROQ_API_KEY` (optional)
    - `OPENAI_API_KEY` (optional, if you have it)
    - `NEXT_PUBLIC_CHATBOT_URL` - **Leave this EMPTY for first deployment** (it has a fallback, and you'll update it after deployment)
+   - `SEED_SECRET` - Random secret for protecting the `/api/seed` endpoint (required)
 4. Click "Deploy"
 5. Wait for deployment to complete
 6. Copy your Vercel deployment URL (e.g., `https://portfolio-chatbot-widget.vercel.app`)
 
 ## Step 4: Seed the FAQ Database
 
-After deployment, run the seed endpoint:
+After deployment, run the seed endpoint (requires `SEED_SECRET`):
 
 ```bash
-curl -X POST https://your-vercel-url.vercel.app/api/seed
+curl -X POST https://your-vercel-url.vercel.app/api/seed \
+  -H "Authorization: Bearer $SEED_SECRET"
+```
+
+Or use the header form:
+
+```bash
+curl -X POST https://your-vercel-url.vercel.app/api/seed \
+  -H "x-seed-secret: $SEED_SECRET"
 ```
 
 You should see: `{"success":true,"count":20}`
@@ -60,6 +69,16 @@ You should see: `{"success":true,"count":20}`
 2. The widget button should appear in the bottom-right corner
 3. Click it and test a question like "Tell me about Arnob Mahmud"
 4. Verify RAG search and AI responses work
+
+## Step 6b: Enable Vercel Firewall (dashboard — no redeploy required)
+
+After first deploy, open **Vercel → Project → Firewall → Bot Management**:
+
+1. **Bot Protection** → **Challenge** (not merely ON) — blocks automated crawlers; normal browsers pass through
+2. **AI Bots** → **Deny** — blocks GPTBot, CCBot, and similar scrapers
+3. **Attack Mode** → **OFF** — only enable during an active attack (adds friction to all visitors)
+
+These settings protect edge/API usage from bot burn without limiting how much real users can chat.
 
 ## Step 7: Integrate into Portfolio
 

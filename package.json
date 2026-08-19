@@ -31,6 +31,9 @@
     "tailwindcss"
   ],
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -47,6 +50,7 @@
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-toast": "^1.2.15",
+    "@sentry/nextjs": "^10.70.0",
     "@tanstack/react-query": "^5.90.19",
     "@tanstack/react-query-devtools": "^5.91.2",
     "@upstash/qstash": "^2.8.4",
@@ -63,7 +67,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",

@@ -1,18 +1,19 @@
-# Embeddable RAG FAQ-Based AI Chatbot Widget - Next.js, Vectorize, Redis, Gemini, Hugging Face, OpenRouter FullStack Project
+# Embeddable RAG FAQ-Based AI Chatbot Widget - Next.js, Redis, Vectorize FAQ Seed, Multiple AI Models, Full-Stack Project
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.4-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Redis](https://img.shields.io/badge/Upstash-Redis-red)](https://upstash.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-24.x-green)](https://nodejs.org/)
+[![launch with diploi badge](https://diploi.com/launch.svg)](https://diploi.com/launch/arnobt78/portfolio-chatbot-widget)
 
-A production-ready, self-hosted RAG (Retrieval Augmented Generation) chatbot widget built with Next.js, Redis vector storage, and multiple AI model fallbacks. Perfect for embedding into portfolio websites or any web application.
+A production-ready, self-hosted **RAG (Retrieval Augmented Generation)** chatbot widget built with Next.js, Upstash Redis vector storage, and a multi-provider AI fallback chain. Embed it in a portfolio site, SaaS dashboard, or any web app — with a React widget or a vanilla JS script.
 
 - **Live Demo:** [https://portfolio-chatbot-widget.vercel.app/](https://portfolio-chatbot-widget.vercel.app/)
-
 - **Production Live:** [https://www.arnobmahmud.com/](https://www.arnobmahmud.com/)
-
-**Author:** [Arnob Mahmud](https://www.arnobmahmud.com/) | **License:** [MIT](./LICENSE)
-
-> 🌟 **Open Source Project** - This is an open-source project. Feel free to use, enhance, and extend this project to the next level! Contributions, improvements, forks, and stars are always welcome. Together, we can make this chatbot widget even better!
+- **Security:** Private reports → [SECURITY.md](./SECURITY.md) · [contact@arnobmahmud.com](mailto:contact@arnobmahmud.com)
+- **Author:** [Arnob Mahmud](https://www.arnobmahmud.com/) · **LinkedIn:** [linkedin.com/in/arnob-mahmud-05839655](https://www.linkedin.com/in/arnob-mahmud-05839655/) · **GitHub:** [github.com/arnobt78](https://github.com/arnobt78)
 
 ![Screenshot 2026-01-25 at 15 13 47](https://github.com/user-attachments/assets/d7416481-2f01-4f89-aad0-8eb7297b72fa)
 ![Screenshot 2026-01-25 at 15 13 59](https://github.com/user-attachments/assets/468cfffa-40e6-4561-8dbc-a263a5e224ac)
@@ -22,907 +23,656 @@ A production-ready, self-hosted RAG (Retrieval Augmented Generation) chatbot wid
 ![Screenshot 2026-01-25 at 15 14 58](https://github.com/user-attachments/assets/af6b6a71-3124-4a13-81ee-3d99a642993a)
 ![Screenshot 2026-01-25 at 15 15 16](https://github.com/user-attachments/assets/2059cd6d-ce3b-4e5d-a7fc-6d4a61fd0452)
 
-## 📋 Table of Contents
+---
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Technology Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [How It Works](#-how-it-works)
-- [Installation & Setup](#-installation--setup)
-- [Environment Variables](#-environment-variables)
-- [Deployment](#-deployment)
-- [Usage](#-usage)
-- [API Endpoints](#-api-endpoints)
-- [Components & Architecture](#-components--architecture)
-- [Reusing Components](#-reusing-components)
-- [Code Examples](#-code-examples)
-- [Keywords](#-keywords)
-- [Conclusion](#-conclusion)
+## Table of Contents
+
+- [What You Will Learn](#what-you-will-learn)
+- [Overview](#overview)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [How It Works (Architecture)](#how-it-works-architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#installation--setup)
+- [Environment Variables](#environment-variables)
+- [Running the Project](#running-the-project)
+- [Seeding the FAQ Knowledge Base](#seeding-the-faq-knowledge-base)
+- [Usage & Embedding](#usage--embedding)
+- [API Reference](#api-reference)
+- [Frontend Architecture](#frontend-architecture)
+- [Backend & AI Pipeline](#backend--ai-pipeline)
+- [Reusing Components in Other Projects](#reusing-components-in-other-projects)
+- [Deployment](#deployment)
+- [Observability (Sentry)](#observability-sentry)
+- [Documentation Index](#documentation-index)
+- [Known Limitations](#known-limitations)
+- [Keywords](#keywords)
+- [Conclusion](#conclusion)
+- [License](#license)
+- [Happy Coding](#happy-coding)
 
 ---
 
-## 🎯 Overview
+## What You Will Learn
 
-This project is a fully functional, embeddable AI chatbot widget that can be integrated into any website. It leverages Next.js Edge Runtime for fast API responses, Redis for vector storage and session management, and implements a robust RAG system with multiple AI model and embedding fallbacks for reliability.
+By studying and running this project, you will learn:
 
-### Key Highlights
-
-- **RAG Implementation**: Semantic search through FAQ database using vector embeddings
-- **Multiple AI Fallbacks**: Gemini → OpenRouter GPT for reliable responses
-- **Multiple Embedding Fallbacks**: Gemini → Hugging Face → OpenRouter → OpenAI
-- **Edge Runtime**: Fast API responses using Next.js Edge Runtime
-- **React Components**: Modern React with TanStack Query for state management
-- **Session Persistence**: 30-day conversation history stored in Redis
-- **Zero Flash**: Instant theme loading prevents FOUC (Flash of Unstyled Content)
-- **Mobile Responsive**: Optimized for all screen sizes
+- How to build a **RAG chatbot** with vector search over a FAQ knowledge base
+- How to stream AI responses with **Server-Sent Events (SSE)** on Next.js Edge routes
+- How to store **sessions and embeddings** in serverless Redis (Upstash)
+- How to design a **multi-provider AI fallback chain** (Gemini → OpenRouter → Groq → Hugging Face → OpenAI)
+- How to embed a chat widget via **React** or **vanilla JavaScript**
+- How to manage client state with **TanStack Query** (cache, optimistic updates)
+- How to wire **Sentry** with same-origin tunneling to bypass ad blockers
 
 ---
 
-## ✨ Features
+## Overview
 
-### Backend Features
+This repository is a **full-stack Next.js application** that serves two roles:
 
-- **RAG (Retrieval Augmented Generation)**: Semantic search through FAQ database using cosine similarity
-- **Streaming AI Responses**: Real-time token streaming using Server-Sent Events (SSE)
-- **AI Model Fallback Chain**: Gemini (primary) → OpenRouter GPT (fallback)
-- **Embedding Fallback Chain**: Gemini → Hugging Face → OpenRouter → OpenAI
-- **Session Persistence**: 30-day conversation history stored in Upstash Redis
-- **Edge Runtime**: Fast API responses with Next.js Edge Runtime
-- **CORS Support**: Cross-origin requests enabled for embedding
-- **Rate Limiting**: Batch processing for embeddings to avoid API limits
+1. **Hosted chatbot backend** — API routes for chat, history, feedback, and FAQ seeding
+2. **Embeddable UI** — floating chat widget (React in `layout.tsx`, or `public/widget.js` for external sites)
 
-### Frontend Features
+Users ask questions in natural language. The system:
 
-- **React Components**: Modern React 19 with TypeScript
-- **TanStack Query**: Efficient data fetching and caching
-- **Dark/Light Mode**: System preference detection with manual toggle, zero flash
-- **Mobile Optimized**: Responsive design with keyboard-aware positioning
-- **Progressive Rendering**: Messages appear as they stream
-- **Optimistic UI**: Instant feedback with optimistic updates
-- **Menu System**: Theme toggle, font size, widget position, and more
-- **Accessibility**: Proper ARIA labels and keyboard navigation
+1. Embeds the question as a vector
+2. Finds the top matching FAQs in Redis (cosine similarity)
+3. Injects that context into the LLM prompt
+4. Streams the answer back token-by-token
+5. Persists the conversation in Redis (30-day session cookie)
+
+The default FAQ dataset contains **20 Q&A pairs** about Arnob Mahmud (portfolio use case). Replace `lib/faqs.ts` with your own content for any domain.
 
 ---
 
-## 🛠 Technology Stack
+## Features
+
+### Core
+
+| Feature                 | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| **RAG search**          | Semantic FAQ retrieval via embeddings + cosine similarity      |
+| **Streaming replies**   | SSE from `/api/chat` — tokens appear as they generate          |
+| **Session history**     | HttpOnly cookie `chatbot_session` + Redis persistence          |
+| **AI fallbacks**        | Automatic provider/model chain if one API fails or rate-limits |
+| **Embedding fallbacks** | Gemini → Hugging Face → OpenRouter → OpenAI for vectors        |
+| **Dual embed modes**    | React widget (this repo) or standalone `widget.js`             |
+| **Theme system**        | Dark/light mode, zero-flash inline script in `layout.tsx`      |
+| **Mobile UX**           | Keyboard-aware positioning, responsive widget                  |
+
+### Production extras
+
+| Feature               | Description                                                    |
+| --------------------- | -------------------------------------------------------------- |
+| **Security headers**  | `X-Frame-Options`, `Referrer-Policy`, etc. in `next.config.ts` |
+| **Sentry (optional)** | Error tracking with `/api/monitoring` tunnel (ad-blocker safe) |
+| **CORS**              | Cross-origin embed support with credentials on API routes      |
+| **Edge runtime**      | Fast chat/history/feedback on Vercel Edge                      |
+
+---
+
+## Technology Stack
 
 ### Frontend
 
-- **Next.js 16.1.4**: React framework with App Router
-- **React 19.2.3**: Latest React with concurrent features
-- **TypeScript 5**: Type-safe development
-- **Tailwind CSS 3.4.17**: Utility-first CSS framework
-- **TanStack Query 5.90.19**: Data fetching and state management
-- **Radix UI**: Accessible component primitives
-- **Lucide React**: Icon library
+| Library                                       | Version | Role                                            |
+| --------------------------------------------- | ------- | ----------------------------------------------- |
+| [Next.js](https://nextjs.org/)                | 16.1.4  | App Router, SSR layout, API routes              |
+| [React](https://react.dev/)                   | 19.2.3  | UI components, hooks                            |
+| [TypeScript](https://www.typescriptlang.org/) | 5.x     | Type safety                                     |
+| [Tailwind CSS](https://tailwindcss.com/)      | 3.4     | Styling                                         |
+| [TanStack Query](https://tanstack.com/query)  | 5.x     | Server state, chat cache key `["chat-history"]` |
+| [Radix UI](https://www.radix-ui.com/)         | —       | Accessible dialogs, menus, toasts               |
+| [Lucide React](https://lucide.dev/)           | —       | Icons                                           |
+
+**TanStack Query in one sentence:** It fetches `/api/history` on load, caches messages, and applies optimistic updates when you send a message — so the UI feels instant while the stream completes.
 
 ### Backend
 
-- **Next.js API Routes**: Serverless API endpoints
-- **Edge Runtime**: Fast edge computing for API routes
-- **Upstash Redis**: Serverless Redis for vector storage and sessions
-- **Google Gemini API**: Primary AI model and embeddings
-- **Hugging Face Inference API**: Embedding fallback
-- **OpenRouter API**: AI model and embedding fallback
-- **OpenAI API**: Embedding fallback (optional)
+| Library / Service                                                            | Role                                       |
+| ---------------------------------------------------------------------------- | ------------------------------------------ |
+| [Upstash Redis](https://upstash.com/)                                        | Session JSON + FAQ vector hashes           |
+| [Google Gemini](https://ai.google.dev/)                                      | Primary chat + embeddings                  |
+| [OpenRouter](https://openrouter.ai/)                                         | Free-tier model fallbacks (`:free` suffix) |
+| [Groq](https://groq.com/)                                                    | Fast OSS model fallbacks                   |
+| [Hugging Face Router](https://huggingface.co/)                               | Embedding + chat fallbacks                 |
+| [OpenAI](https://openai.com/)                                                | Optional paid last resort                  |
+| [Vercel AI SDK](https://sdk.vercel.ai/) (`ai` package)                       | Streaming abstraction                      |
+| [@sentry/nextjs](https://docs.sentry.io/platforms/javascript/guides/nextjs/) | Optional error monitoring                  |
 
-### Development Tools
+### Runtimes
 
-- **ESLint**: Code linting
-- **TypeScript**: Type checking
-- **PostCSS**: CSS processing
-- **Autoprefixer**: CSS vendor prefixing
+| Route                                        | Runtime                                  |
+| -------------------------------------------- | ---------------------------------------- |
+| `/api/chat`, `/api/history`, `/api/feedback` | **Edge**                                 |
+| `/api/seed`                                  | **Node.js** (longer embedding batch job) |
 
 ---
 
-## 📁 Project Structure
+## How It Works (Architecture)
 
-```bash
+```text
+User message
+    │
+    ▼
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Chat Widget    │────▶│  POST /api/chat  │────▶│  getSession()   │
+│  (React / JS)   │◀────│  SSE stream      │◀────│  saveSession()  │
+└─────────────────┘     └────────┬─────────┘     └─────────────────┘
+                                 │
+                    ┌────────────┼────────────┐
+                    ▼            ▼            ▼
+              searchFAQ()   getAIResponse()  Redis
+              (RAG)         (fallback chain) (Upstash)
+                    │            │
+                    ▼            ▼
+              generateEmbedding  Gemini / OpenRouter /
+              + cosine search    Groq / HF / OpenAI
+```
+
+**RAG step (`lib/rag.ts`):**
+
+```typescript
+// 1. Embed the user question
+const queryEmbedding = await generateEmbedding(query);
+// 2. Compare against all FAQ vectors in Redis
+const results = await searchVectors(queryEmbedding, topK);
+// 3. Format top matches as LLM context
+return results
+  .map((r) => `Q: ${r.metadata.question}\nA: ${r.metadata.answer}`)
+  .join("\n\n");
+```
+
+**Session cookie:** New visitors get `chatbot_session=sess_...` (HttpOnly, SameSite=Lax, 30 days). The same ID loads history on return visits.
+
+---
+
+## Project Structure
+
+```text
 portfolio-chatbot-widget/
 ├── app/
 │   ├── api/
-│   │   ├── chat/
-│   │   │   └── route.ts          # Chat API endpoint (Edge Runtime)
-│   │   ├── feedback/
-│   │   │   └── route.ts          # Feedback submission endpoint
-│   │   ├── history/
-│   │   │   └── route.ts          # Chat history retrieval
-│   │   └── seed/
-│   │       └── route.ts          # FAQ seeding endpoint (Node.js Runtime)
-│   ├── layout.tsx                # Root layout with widget injection
-│   ├── page.tsx                   # Demo page
-│   ├── providers.tsx              # TanStack Query provider
-│   └── globals.css                # Global styles
+│   │   ├── chat/route.ts       # POST — SSE streaming chat
+│   │   ├── history/route.ts    # GET — load session messages
+│   │   ├── feedback/route.ts   # POST — feedback form (logs; email TBD)
+│   │   └── seed/route.ts       # POST — embed FAQs into Redis
+│   ├── global-error.tsx        # Sentry global error boundary
+│   ├── layout.tsx              # SSR shell + theme script + ChatbotWidget
+│   ├── page.tsx                # Demo landing page
+│   ├── providers.tsx           # TanStack Query + widget settings
+│   └── robots.ts               # SEO / AI crawler rules
 ├── components/
 │   ├── chatbot/
-│   │   ├── chatbot-widget.tsx    # Main widget component
-│   │   ├── widget-menu.tsx       # Menu dropdown component
-│   │   └── message-skeleton.tsx  # Loading skeleton component
-│   └── ui/
-│       ├── button.tsx            # Button component (shadcn)
-│       ├── dialog.tsx             # Dialog component (shadcn)
-│       ├── skeleton.tsx           # Skeleton component (shadcn)
-│       └── toast.tsx              # Toast notification component
+│   │   ├── chatbot-widget.tsx  # Main floating widget UI
+│   │   ├── widget-menu.tsx     # Settings menu (theme, font, position)
+│   │   └── message-skeleton.tsx
+│   └── ui/                     # shadcn-style primitives (button, dialog, …)
+├── contexts/
+│   └── widget-settings-context.tsx  # Theme, font size, position (localStorage)
 ├── hooks/
-│   ├── use-chat.ts               # Chat functionality hook
-│   └── use-widget-settings.ts    # Widget settings hook
+│   ├── use-chat.ts             # TanStack Query + SSE sendMessage
+│   └── use-widget-settings.ts
 ├── lib/
-│   ├── ai.ts                     # AI model integration (fallback chain)
-│   ├── embeddings.ts             # Embedding generation (fallback chain)
-│   ├── rag.ts                    # RAG search implementation
-│   ├── redis.ts                  # Redis client and vector operations
-│   ├── faqs.ts                   # FAQ knowledge base
-│   ├── constants.ts              # Application constants
-│   ├── types.ts                  # TypeScript type definitions
-│   ├── utils.ts                  # Utility functions
-│   └── export-utils.ts           # Chat export utilities
+│   ├── ai/                     # Provider registry + streaming orchestrator
+│   │   ├── providers.ts        # Model chains per provider
+│   │   ├── index.ts            # getAIResponse() fallback loop
+│   │   ├── gemini-stream.ts
+│   │   ├── openai-stream.ts
+│   │   ├── normalize-messages.ts
+│   │   └── retriable.ts        # 429 / 5xx classification
+│   ├── embeddings.ts           # Multi-provider embedding generation
+│   ├── faqs.ts                 # FAQ knowledge base (edit this!)
+│   ├── rag.ts                  # searchFAQ()
+│   ├── redis.ts                # Sessions, vectors, cosine search
+│   ├── sentry-env.ts           # DSN + tunnel path helpers
+│   ├── sentry-filters.ts       # Ignore extension/browser noise
+│   └── constants.ts
 ├── public/
-│   ├── widget.js                 # Vanilla JS embeddable widget
-│   └── styles.css                # Widget stylesheet
-├── types/
-│   └── window.d.ts               # Window type definitions
-├── next.config.ts                # Next.js configuration
-├── tailwind.config.js            # Tailwind CSS configuration
-├── tsconfig.json                 # TypeScript configuration
-└── package.json                  # Dependencies and scripts
+│   ├── widget.js               # Vanilla embed script for external sites
+│   └── styles.css              # Widget styles (shared)
+├── docs/                       # Deployment, guardrails, integration guides
+├── instrumentation.ts            # Sentry server/edge bootstrap
+├── instrumentation-client.ts   # Sentry client + tunnel
+├── sentry.server.config.ts
+├── sentry.edge.config.ts
+├── next.config.ts                # Security headers + Sentry wrapper
+├── .env.example                  # All env vars (copy to .env.local)
+└── SECURITY.md                   # Private vulnerability reporting
 ```
-
-### File Descriptions
-
-- **`app/api/chat/route.ts`**: Main chat API endpoint with SSE streaming
-- **`app/api/seed/route.ts`**: Seeds FAQ embeddings into Redis
-- **`components/chatbot/chatbot-widget.tsx`**: Main React widget component
-- **`hooks/use-chat.ts`**: TanStack Query hook for chat functionality
-- **`lib/ai.ts`**: AI model integration with fallback chain
-- **`lib/embeddings.ts`**: Embedding generation with multiple fallbacks
-- **`lib/rag.ts`**: RAG search implementation using cosine similarity
-- **`lib/redis.ts`**: Redis client, vector storage, and session management
-- **`public/widget.js`**: Vanilla JavaScript embeddable widget (for external sites)
 
 ---
 
-## 🔄 How It Works
+## Prerequisites
 
-### Architecture Flow
-
-```bash
-User Input → React Component (chatbot-widget.tsx)
-    ↓
-useChat Hook → POST /api/chat
-    ↓
-1. Extract/Generate Session ID (from cookie)
-2. Retrieve FAQ Context (RAG)
-   - Generate embedding vector (Gemini → Hugging Face → OpenRouter → OpenAI)
-   - Search Redis vectors (cosine similarity)
-   - Get top 3 relevant FAQs
-3. Build AI Message Array
-   - System prompt + FAQ context
-   - Last 6 conversation messages
-4. Stream AI Response
-   - Try Gemini models (gemini-2.5-flash, gemini-2.5-pro)
-   - Fallback to OpenRouter GPT-4o-mini
-   - Stream via SSE
-5. Save to Redis
-    ↓
-SSE Stream → React Component
-    ↓
-TanStack Query Cache Update → UI Update
-```
-
-### RAG (Retrieval Augmented Generation) Process
-
-1. **Question Embedding**: User's question is converted to a 768-dimensional vector
-   - Primary: Gemini Embeddings API (`gemini-embedding-001`)
-   - Fallback 1: Hugging Face (`sentence-transformers/all-MiniLM-L6-v2`)
-   - Fallback 2: OpenRouter (OpenAI `text-embedding-ada-002`)
-   - Fallback 3: OpenAI (direct, if API key available)
-
-2. **Vector Search**: Redis is queried for similar vectors using cosine similarity
-   - All FAQ vectors stored in Redis with metadata
-   - Cosine similarity calculated for each vector
-   - Top 3 most similar FAQs retrieved
-
-3. **Context Retrieval**: Top 3 most relevant FAQ entries are formatted
-
-4. **Context Injection**: FAQs are formatted and injected into the AI system prompt
-
-5. **AI Generation**: AI model generates response using FAQ context + conversation history
-   - Primary: Google Gemini (`gemini-2.5-flash`, `gemini-2.5-pro`)
-   - Fallback: OpenRouter GPT-4o-mini
-
-### Session Management
-
-- **Session Creation**: New sessions get a timestamp-based session ID
-- **Cookie Storage**: Session ID stored in HttpOnly cookie (30-day expiration)
-- **Redis Storage**: Full conversation history stored in Upstash Redis
-- **Session Retrieval**: Existing sessions load conversation history on widget initialization
+- **Node.js 24.x** (see `.nvmrc` and `package.json` engines)
+- **npm** (or pnpm/yarn)
+- **Upstash Redis** account (free tier works)
+- **Google Gemini API key** (primary AI)
+- **Hugging Face token** (embedding fallback — recommended)
+- Optional: OpenRouter, Groq, OpenAI keys for deeper fallback coverage
+- Optional: Sentry project for error monitoring
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
-### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-- Upstash Redis account (free tier available)
-- Google Gemini API key (free tier available)
-- Hugging Face API key (free tier available)
-- OpenRouter API key (optional, for fallback)
-
-### Step 1: Clone Repository
+### 1. Clone and install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/arnobt78/portfolio-chatbot-widget.git
 cd portfolio-chatbot-widget
-```
-
-### Step 2: Install Dependencies
-
-```bash
 npm install
 ```
 
-This installs all required dependencies including Next.js, React, TanStack Query, and Redis client.
-
-### Step 3: Configure Environment Variables
-
-Create a `.env.local` file in the root directory:
+### 2. Configure environment
 
 ```bash
 cp .env.example .env.local
 ```
 
-See [Environment Variables](#-environment-variables) section for detailed configuration.
+Edit `.env.local` — see [Environment Variables](#environment-variables) below.
 
-### Step 4: Seed FAQ Data
-
-After setting up environment variables, populate Redis with FAQ embeddings:
-
-```bash
-curl -X POST http://localhost:3000/api/seed
-```
-
-This generates embeddings for all FAQs and stores them in Redis.
-
-### Step 5: Run Development Server
+### 3. Seed FAQs (required before first chat)
 
 ```bash
 npm run dev
+# In another terminal (set SEED_SECRET in .env.local first):
+curl -X POST http://localhost:3000/api/seed \
+  -H "Authorization: Bearer $SEED_SECRET"
 ```
 
-Visit `http://localhost:3000` to see the widget in action.
+Expected response: `{"success":true,"count":20}`
+
+### 4. Open the demo
+
+Visit [http://localhost:3000](http://localhost:3000) and use the widget in the bottom-right corner.
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
-### Required Variables
+Copy from [`.env.example`](.env.example). **Never commit `.env.local`.**
 
-Create a `.env.local` file in the root directory with the following variables:
+### Required (minimum to run chat)
 
-```bash
-# Redis Configuration (Upstash)
-UPSTASH_REDIS_URL=https://your-redis-instance.upstash.io
-UPSTASH_REDIS_TOKEN=your-redis-token
+| Variable                | Description              | Where to get                                                             |
+| ----------------------- | ------------------------ | ------------------------------------------------------------------------ |
+| `UPSTASH_REDIS_URL`     | Upstash REST URL         | [console.upstash.com](https://console.upstash.com) → Database → REST API |
+| `UPSTASH_REDIS_TOKEN`   | Upstash REST token       | Same as above                                                            |
+| `GOOGLE_GEMINI_API_KEY` | Primary LLM + embeddings | [aistudio.google.com/apikey](https://aistudio.google.com/apikey)         |
+| `HUGGING_FACE_API_KEY`  | Embedding fallback       | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
 
-# AI Model API Keys
-GOOGLE_GEMINI_API_KEY=your-gemini-api-key
-OPENROUTER_API_KEY=your-openrouter-api-key  # Optional, for fallback
+### Optional — AI fallbacks
 
-# Embedding API Keys
-HUGGING_FACE_API_KEY=your-huggingface-api-key
-OPENAI_API_KEY=your-openai-api-key  # Optional, for embedding fallback
+| Variable             | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `OPENROUTER_API_KEY` | Free-tier models via OpenRouter (`:free` chain) |
+| `GROQ_API_KEY`       | Groq OSS models                                 |
+| `OPENAI_API_KEY`     | Paid last-resort chat + embeddings              |
 
-# Application Configuration
-NEXT_PUBLIC_CHATBOT_URL=http://localhost:3000  # Your deployment URL
-CHATBOT_TITLE=Chat Assistant  # Widget title
-CHATBOT_GREETING=👋 How can I help you today?  # Initial greeting
-CHATBOT_PLACEHOLDER=Message...  # Input placeholder
+Alternate names supported: `OpenRouter_API_KEY`, `Groq_Llama_API_KEY`, `Hugging_Face_Inference_API_KEY`.
 
-# Session Configuration (optional)
-SESSION_TTL=2592000  # 30 days in seconds
+### App / widget configuration
+
+| Variable                  | Default                 | Description                                      |
+| ------------------------- | ----------------------- | ------------------------------------------------ |
+| `NEXT_PUBLIC_CHATBOT_URL` | `http://localhost:3000` | Public deploy URL (embed + API base)             |
+| `NEXT_PUBLIC_SITE_URL`    | —                       | OpenRouter HTTP-Referer fallback                 |
+| `CHATBOT_TITLE`           | `Chat Assistant`        | Widget header title                              |
+| `CHATBOT_GREETING`        | `👋 How can I help…`    | First message bubble                             |
+| `CHATBOT_PLACEHOLDER`     | `Message...`            | Input placeholder                                |
+| `SESSION_TTL`             | `2592000` (30 days)     | Redis session TTL in seconds                     |
+| `SEED_SECRET`               | —                       | **Required** — protects `POST /api/seed`         |
+| `FEEDBACK_EMAIL`          | —                       | Intended recipient (email sending not wired yet) |
+
+### Optional — Sentry
+
+| Variable                 | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `NEXT_PUBLIC_SENTRY_DSN` | Browser DSN (required for client errors)   |
+| `SENTRY_DSN`             | Server alias (falls back to public DSN)    |
+| `SENTRY_ORG`             | Org slug — build-time source maps          |
+| `SENTRY_PROJECT`         | **Project slug** (not org name)            |
+| `SENTRY_AUTH_TOKEN`      | CI/Vercel auth token for source map upload |
+
+When DSN is empty, Sentry is **disabled** — no runtime overhead.
+
+### Example `.env.local` (minimal)
+
+```env
+UPSTASH_REDIS_URL=https://xxxx.upstash.io
+UPSTASH_REDIS_TOKEN=AXxxxx
+GOOGLE_GEMINI_API_KEY=AIza...
+HUGGING_FACE_API_KEY=hf_...
+NEXT_PUBLIC_CHATBOT_URL=http://localhost:3000
 ```
-
-### Getting API Keys
-
-#### 1. Upstash Redis
-
-1. Visit [https://upstash.com/](https://upstash.com/)
-2. Create a free account
-3. Create a new Redis database
-4. Copy the `UPSTASH_REDIS_URL` and `UPSTASH_REDIS_TOKEN`
-
-#### 2. Google Gemini API
-
-1. Visit [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Copy the `GOOGLE_GEMINI_API_KEY`
-
-#### 3. Hugging Face API
-
-1. Visit [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
-2. Create a new access token
-3. Copy the `HUGGING_FACE_API_KEY`
-
-#### 4. OpenRouter API (Optional)
-
-1. Visit [https://openrouter.ai/](https://openrouter.ai/)
-2. Create an account and add credits
-3. Generate an API key
-4. Copy the `OPENROUTER_API_KEY`
-
-#### 5. OpenAI API (Optional)
-
-1. Visit [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Create a new API key
-3. Copy the `OPENAI_API_KEY`
 
 ---
 
-## 📦 Deployment
+## Running the Project
 
-### Development
+| Command         | Purpose                                       |
+| --------------- | --------------------------------------------- |
+| `npm run dev`   | Development server at `http://localhost:3000` |
+| `npm run build` | Production build (TypeScript + Next.js)       |
+| `npm start`     | Run production server locally                 |
+| `npm run lint`  | ESLint                                        |
 
-```bash
-npm run dev
-```
-
-Starts development server at `http://localhost:3000` with hot reload.
-
-### Production Build
-
-```bash
-npm run build
-npm start
-```
-
-Builds optimized production bundle and starts production server.
-
-### Deployment to Vercel
-
-1. **Push to GitHub**:
-
-   ```bash
-   git add .
-   git commit -m "Deploy to Vercel"
-   git push origin main
-   ```
-
-2. **Connect to Vercel**:
-   - Visit [https://vercel.com/](https://vercel.com/)
-   - Import your GitHub repository
-   - Add environment variables in Vercel dashboard
-   - Deploy!
-
-3. **Post-Deployment**:
-   - Update `NEXT_PUBLIC_CHATBOT_URL` to your Vercel URL
-   - Run seed endpoint: `curl -X POST https://your-app.vercel.app/api/seed`
-
-### Deployment to VPS (Coolify/Hetzner)
-
-1. **Push to GitHub**:
-
-   ```bash
-   git add .
-   git commit -m "Deploy to VPS"
-   git push origin main
-   ```
-
-2. **Deploy via Coolify**:
-   - Login to Coolify dashboard
-   - Create new application
-   - Connect GitHub repository
-   - Set environment variables
-   - Deploy!
-
-3. **Configure Domain**:
-   - Point DNS to your VPS IP
-   - Configure domain in Coolify
-   - Update `NEXT_PUBLIC_CHATBOT_URL`
+**Node version:** Use Node 24 (`nvm use` reads `.nvmrc`).
 
 ---
 
-## 💻 Usage
+## Seeding the FAQ Knowledge Base
 
-### Embedding in Your Portfolio
+The seed endpoint reads `lib/faqs.ts`, generates embeddings in batches, and stores vectors in Redis.
 
-#### Option 1: React Component (Recommended for Next.js)
-
-Add to your `app/layout.tsx`:
-
-```tsx
-import { ChatbotWidget } from "@/components/chatbot/chatbot-widget";
-
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <ChatbotWidget />
-      </body>
-    </html>
-  );
-}
+```bash
+curl -X POST https://your-domain.com/api/seed \
+  -H "Authorization: Bearer $SEED_SECRET"
 ```
 
-#### Option 2: Vanilla JavaScript (For External Sites)
+`SEED_SECRET` must be set in `.env.local` / Vercel — requests without a valid secret return `401`; if unset server-side, returns `503`.
 
-Add to your HTML:
+**When to re-seed:** After editing `lib/faqs.ts` or changing embedding models.
+
+**Customize FAQs:** Edit the `faqs` array in `lib/faqs.ts` — each entry is `[question, answer]`.
+
+---
+
+## Usage & Embedding
+
+### Option A — React widget (this repo)
+
+Already mounted in `app/layout.tsx` via `<ChatbotWidget />`. Config comes from env vars injected into `window`:
+
+```javascript
+window.CHATBOT_BASE_URL = "https://your-app.vercel.app";
+window.CHATBOT_TITLE = "Chat Assistant";
+window.CHATBOT_GREETING = "👋 How can I help you today?";
+window.CHATBOT_PLACEHOLDER = "Message...";
+```
+
+### Option B — Vanilla JS on any website
+
+On your external site (e.g. WordPress, static HTML):
 
 ```html
-<!-- Configure widget -->
 <script>
-  window.CHATBOT_BASE_URL = "https://your-domain.com";
-  window.CHATBOT_TITLE = "Support Assistant";
-  window.CHATBOT_GREETING = "Hi! 👋 How can I help you today?";
-  window.CHATBOT_PLACEHOLDER = "Type your message...";
+  window.CHATBOT_BASE_URL = "https://portfolio-chatbot-widget.vercel.app";
+  window.CHATBOT_TITLE = "Portfolio Assistant";
 </script>
-
-<!-- Load widget script -->
-<script src="https://your-domain.com/widget.js" async></script>
+<script
+  src="https://portfolio-chatbot-widget.vercel.app/widget.js"
+  async
+></script>
 ```
 
-### Configuration Options
+The script creates a floating button, loads `/styles.css` from your deployment, and calls the same `/api/chat` and `/api/history` endpoints with cookies.
 
-| Variable              | Default                          | Description              |
-| --------------------- | -------------------------------- | ------------------------ |
-| `CHATBOT_BASE_URL`    | `window.location.origin`         | API endpoint URL         |
-| `CHATBOT_TITLE`       | `'Chat Assistant'`               | Widget header title      |
-| `CHATBOT_GREETING`    | `'👋 How can I help you today?'` | Initial greeting message |
-| `CHATBOT_PLACEHOLDER` | `'Message...'`                   | Input field placeholder  |
+### Option C — Copy components into another Next.js app
+
+1. Copy `components/chatbot/`, `hooks/use-chat.ts`, `contexts/widget-settings-context.tsx`
+2. Copy `public/styles.css`
+3. Point `CHATBOT_BASE_URL` at your deployed API origin
+4. Ensure CORS + credentials work for your domain
 
 ---
 
-## 🔌 API Endpoints
+## API Reference
 
-### POST `/api/chat`
+### `POST /api/chat`
 
-Sends a message and receives a streaming AI response.
+Stream a chat response.
 
 **Request:**
 
 ```json
-{
-  "message": "Tell me about your services"
-}
+{ "message": "Tell me about Arnob Mahmud" }
 ```
 
-**Response:** Server-Sent Events (SSE) stream
+**Headers:** `Cookie: chatbot_session=...` (optional — created if missing)
 
-```json
-data: {"response": "Hello"}
-data: {"response": "! "}
-data: {"response": "I can"}
-...
+**Response:** `text/event-stream`
+
+```text
+data: {"response":"Hello"}
+data: {"response":" there"}
 data: [DONE]
 ```
 
-**Headers:**
-
-- `Content-Type: application/json` (request)
-- `Content-Type: text/event-stream` (response)
-- `Set-Cookie: chatbot_session=...` (new sessions)
+**Runtime:** Edge
 
 ---
 
-### GET `/api/history`
+### `GET /api/history`
 
-Retrieves conversation history for the current session.
-
-**Request:** Cookie-based (no body needed)
+Return messages for the current session cookie.
 
 **Response:**
 
 ```json
 {
   "messages": [
-    {
-      "role": "user",
-      "content": "Hello",
-      "timestamp": 1234567890
-    },
-    {
-      "role": "assistant",
-      "content": "Hi! How can I help?",
-      "timestamp": 1234567891
-    }
+    { "role": "user", "content": "Hi", "timestamp": 1700000000000 },
+    { "role": "assistant", "content": "Hello!", "timestamp": 1700000001000 }
   ]
 }
 ```
 
-**Headers:**
-
-- Cookie: `chatbot_session=<session-id>`
+**Runtime:** Edge
 
 ---
 
-### POST `/api/seed`
+### `DELETE /api/history`
 
-Populates Redis with FAQ embeddings.
+Clear the current session on the server and expire the session cookie. Used by **Clear Chat** / **New Chat** in the widget.
 
-**Request:** No body required
+**Response:** `{ "success": true }`
 
-**Response:**
+**Runtime:** Edge
 
-```json
-{
-  "success": true,
-  "count": 20
-}
+---
+
+### `POST /api/seed`
+
+Embed all FAQs from `lib/faqs.ts` into Redis. **Requires auth:**
+
+```bash
+Authorization: Bearer <SEED_SECRET>
+# or
+x-seed-secret: <SEED_SECRET>
 ```
 
-**Note:** Run this once after deployment to populate the knowledge base.
+**Response:** `{ "success": true, "count": 20 }`
+
+**Runtime:** Node.js
 
 ---
 
-### POST `/api/feedback`
+### `POST /api/feedback`
 
-Submits user feedback.
+Submit widget feedback or issue report.
 
 **Request:**
 
 ```json
 {
+  "type": "feedback",
   "rating": 5,
-  "comment": "Great chatbot!"
+  "comment": "Great widget!",
+  "email": "user@example.com"
 }
 ```
 
-**Response:**
+**Note:** Logs to server console; email integration is TODO.
 
-```json
-{
-  "success": true
-}
-```
+**Runtime:** Edge
 
 ---
 
-## 🏗 Components & Architecture
+All chat/history/feedback routes support **CORS** with `Access-Control-Allow-Credentials: true` for cross-origin embeds.
 
-### Backend Components
+---
 
-#### 1. RAG Search (`lib/rag.ts`)
+## Frontend Architecture
 
-**Purpose:** Implements Retrieval Augmented Generation
+### `useChat` hook (`hooks/use-chat.ts`)
 
-**Process:**
+- **Query key:** `["chat-history"]` — loads history on mount
+- **Optimistic update:** User message appears immediately on send
+- **Streaming:** Parses SSE chunks and updates assistant message in cache
+- **Rollback:** On error, restores previous cache snapshot
 
 ```typescript
-export async function searchFAQ(
-  query: string,
-  topK: number = 3,
-): Promise<string> {
-  // 1. Generate embedding
-  const queryEmbedding = await generateEmbedding(query);
-
-  // 2. Search Redis vectors
-  const results = await searchVectors(queryEmbedding, topK);
-
-  // 3. Format context
-  return results
-    .map((result) => {
-      const { question, answer } = result.metadata;
-      return `Q: ${question}\nA: ${answer}`;
-    })
-    .join("\n\n");
-}
+const { messages, sendMessage, isLoading, clearChat } = useChat();
 ```
 
-**Reusability:** Can be extracted to a separate module for use in other projects.
+### Widget settings (`contexts/widget-settings-context.tsx`)
+
+Persists to `localStorage`:
+
+- Theme (light / dark)
+- Font size
+- Widget position (left / right)
+
+### Zero-flash theme
+
+An inline `<script>` in `layout.tsx` runs **before paint**, reads `localStorage`, and sets CSS variables — preventing a white flash on dark mode.
 
 ---
 
-#### 2. AI Model Integration (`lib/ai.ts`)
+## Backend & AI Pipeline
 
-**Purpose:** Handles AI model calls with fallback chain
+### Provider registry (`lib/ai/providers.ts`)
 
-**Key Features:**
+Chat providers are tried **in order**. Within each provider, models are tried until one succeeds. On HTTP 429, remaining models for that provider are skipped (fast-skip).
 
-- Gemini models (primary): `gemini-2.5-flash`, `gemini-2.5-pro`
-- OpenRouter GPT (fallback): `openai/gpt-4o-mini`
-- Message normalization for different formats
-- Streaming support
+| Order | Provider     | Example models                              |
+| ----- | ------------ | ------------------------------------------- |
+| 1     | Gemini       | `gemini-2.5-flash`, `gemini-2.5-flash-lite` |
+| 2     | OpenRouter   | `openai/gpt-oss-20b:free`, …                |
+| 3     | Groq         | `openai/gpt-oss-120b`, …                    |
+| 4     | Hugging Face | `openai/gpt-oss-20b`, …                     |
+| 5     | OpenAI       | `gpt-4o-mini` (paid)                        |
 
-**Reusability:** The fallback pattern can be adapted for other AI models.
+See [docs/LLM_MODEL_SELECTION.md](docs/LLM_MODEL_SELECTION.md) for verification notes and update policy.
 
----
+### Embeddings (`lib/embeddings.ts`)
 
-#### 3. Embedding Generation (`lib/embeddings.ts`)
+Used by RAG search and `/api/seed`. Fallback chain: Gemini → Hugging Face Router → OpenRouter free embedding → OpenAI.
 
-**Purpose:** Generates embeddings with multiple fallbacks
+### Redis data model (`lib/redis.ts`)
 
-**Fallback Chain:**
+| Key pattern            | Content                                        |
+| ---------------------- | ---------------------------------------------- |
+| `chat:session:{id}`    | JSON session with messages (TTL)               |
+| `chat:vectors:faq-{n}` | Hash: `vector`, `metadata` (question + answer) |
 
-1. Gemini Embeddings (`gemini-embedding-001`)
-2. Hugging Face (`sentence-transformers/all-MiniLM-L6-v2`)
-3. OpenRouter (OpenAI `text-embedding-ada-002`)
-4. OpenAI (direct, if API key available)
-
-**Reusability:** Embedding logic can be extracted to a standalone utility.
-
----
-
-#### 4. Redis Operations (`lib/redis.ts`)
-
-**Purpose:** Manages Redis connections, sessions, and vector storage
-
-**Key Functions:**
-
-- `getSession()`: Retrieve session from Redis
-- `saveSession()`: Save session to Redis with TTL
-- `storeVector()`: Store FAQ embeddings
-- `searchVectors()`: Cosine similarity search
-
-**Reusability:** Redis operations can be adapted for other use cases.
+Vector search uses in-process cosine similarity over all FAQ keys (fine for ~20–100 FAQs; for larger scale, use RediSearch or a dedicated vector DB).
 
 ---
 
-### Frontend Components
+## Reusing Components in Other Projects
 
-#### 1. Chatbot Widget (`components/chatbot/chatbot-widget.tsx`)
+| Piece                     | Reuse strategy                                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **`ChatbotWidget`**       | Drop into any Next.js `layout.tsx` with `Providers`                                                                                       |
+| **`useChat`**             | Change `CHATBOT_BASE_URL` or pass custom API base                                                                                         |
+| **`lib/faqs.ts`**         | Replace Q&A content — your domain knowledge                                                                                               |
+| **`lib/ai/providers.ts`** | Adjust model IDs when providers deprecate models                                                                                          |
+| **`public/widget.js`**    | Zero-build embed for non-React sites                                                                                                      |
+| **Integration guide**     | [docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md](docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md) — portable Redis/Sentry/PostHog patterns |
 
-**Purpose:** Main React component for the chatbot widget
+**Minimal external embed checklist:**
 
-**Key Features:**
-
-- Toggle open/close state
-- Message rendering
-- Input handling
-- Auto-scroll
-- Responsive design
-
-**Reusability:** Component can be customized for different use cases.
-
----
-
-#### 2. Chat Hook (`hooks/use-chat.ts`)
-
-**Purpose:** TanStack Query hook for chat functionality
-
-**Key Features:**
-
-- Chat history fetching
-- Message sending with streaming
-- Optimistic UI updates
-- Error handling
-
-**Reusability:** Hook can be adapted for other chat applications.
+1. Deploy this app (or fork) with env vars set
+2. `POST /api/seed` once (with `Authorization: Bearer $SEED_SECRET`)
+3. Add `widget.js` + `CHATBOT_BASE_URL` to your site
+4. Ensure your domain is allowed by CORS (currently reflects request `Origin`)
 
 ---
 
-#### 3. Widget Settings Hook (`hooks/use-widget-settings.ts`)
+## Deployment
 
-**Purpose:** Manages widget settings (theme, font size, position)
+### Vercel (recommended)
 
-**Key Features:**
+1. Push to GitHub
+2. Import repo in [vercel.com](https://vercel.com)
+3. Add all env vars from `.env.example`
+4. Deploy — Node 24 picked up via `engines` field
+5. Post-deploy: `curl -X POST https://your-app.vercel.app/api/seed -H "Authorization: Bearer $SEED_SECRET"`
+6. Set `NEXT_PUBLIC_CHATBOT_URL` to your Vercel URL
 
-- localStorage persistence
-- Theme management
-- Font size control
-- Position control
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full steps including Vercel Firewall (Bot Challenge + AI Bots Deny).
 
-**Reusability:** Settings logic can be extracted to a standalone utility.
+### Self-hosted
 
----
-
-## 🔄 Reusing Components
-
-### Using RAG Function in Another Project
-
-```typescript
-// Copy searchFAQ() from lib/rag.ts
-// Adapt to your embedding model and vector database
-
-import { generateEmbedding } from "./embeddings";
-import { searchVectors } from "./redis";
-
-export async function customRAG(query: string, topK: number = 5) {
-  const queryEmbedding = await generateEmbedding(query);
-  const results = await searchVectors(queryEmbedding, topK);
-  return results.map((r) => r.metadata);
-}
+```bash
+npm run build
+npm start
 ```
 
-### Using Chat Hook in Another Project
-
-```typescript
-// Copy useChat() from hooks/use-chat.ts
-// Adapt to your API endpoint
-
-import { useMutation, useQuery } from "@tanstack/react-query";
-
-export function useCustomChat() {
-  const { data: messages } = useQuery({
-    queryKey: ["chat-history"],
-    queryFn: fetchHistory,
-  });
-
-  const sendMessage = useMutation({
-    mutationFn: async (message: string) => {
-      // Your API call
-    },
-  });
-
-  return { messages, sendMessage };
-}
-```
-
-### Using AI Model Integration
-
-```typescript
-// Copy getAIResponse() from lib/ai.ts
-// Adapt to your AI models
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-export async function getCustomAIResponse(messages: Message[]) {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-  const result = await model.generateContentStream(prompt);
-  return result;
-}
-```
+Requires Node 24 and the same env vars.
 
 ---
 
-## 💡 Code Examples
+## Observability (Sentry)
 
-### Example 1: Custom FAQ Dataset
+Optional error tracking with **ad-blocker-safe tunnel**:
 
-Modify `lib/faqs.ts` to use your own FAQs:
+- Client events POST to same-origin `/api/monitoring`
+- Server forwards to Sentry ingest
+- Noise filters drop browser extension errors
 
-```typescript
-export const faqs = [
-  ["What is your return policy?", "We offer 30-day returns..."],
-  ["How do I track my order?", "You can track your order..."],
-  // Add more FAQs
-];
-```
-
-### Example 2: Custom AI Model
-
-Add a new model to the fallback chain in `lib/ai.ts`:
-
-```typescript
-// Add before OpenRouter fallback
-try {
-  const customModel = new CustomAIClient(process.env.CUSTOM_API_KEY!);
-  const response = await customModel.generate(messages);
-  return { text: response };
-} catch (error) {
-  console.log("Custom model failed, trying next...");
-}
-```
-
-### Example 3: Custom Embedding Model
-
-Add a new embedding provider in `lib/embeddings.ts`:
-
-```typescript
-// Add before Hugging Face fallback
-try {
-  const response = await fetch("https://api.custom-embeddings.com/embed", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.CUSTOM_EMBEDDING_KEY}` },
-    body: JSON.stringify({ text }),
-  });
-  const data = await response.json();
-  return data.embedding;
-} catch (error) {
-  console.log("Custom embedding failed, trying next...");
-}
-```
-
-### Example 4: Custom Widget Styling
-
-Modify `components/chatbot/chatbot-widget.tsx`:
-
-```typescript
-// Update className for custom styling
-<button
-  className={cn(
-    "fixed w-14 h-14 bg-blue-600 rounded-full", // Custom color
-    "shadow-2xl flex items-center justify-center",
-    // ... more styles
-  )}
->
-```
+Setup details: [docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md](docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md#2-sentry-error-tracking)
 
 ---
 
-## 🏷 Keywords
+## Documentation Index
 
-- **RAG (Retrieval Augmented Generation)**
-- **Next.js**
-- **React**
-- **TypeScript**
-- **Redis**
-- **Vector Database**
-- **Semantic Search**
-- **Embeddings**
-- **AI Chatbot**
-- **Streaming Responses**
-- **Server-Sent Events (SSE)**
-- **TanStack Query**
-- **Edge Runtime**
-- **Upstash Redis**
-- **Google Gemini**
-- **Hugging Face**
-- **OpenRouter**
-- **OpenAI**
-- **Cosine Similarity**
-- **Session Management**
-- **Dark Mode**
-- **Mobile Responsive**
-- **Embeddable Widget**
-- **FAQ-Based Chatbot**
+| Document                                                                                         | Purpose                         |
+| ------------------------------------------------------------------------------------------------ | ------------------------------- |
+| [docs/PROJECT_WALKTHROUGH.md](docs/PROJECT_WALKTHROUGH.md)                                       | Agent/dev quick reference       |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                                         | Vercel/VPS deploy steps         |
+| [docs/LLM_MODEL_SELECTION.md](docs/LLM_MODEL_SELECTION.md)                                       | Free-tier model research        |
+| [docs/VERCEL_PRODUCTION_GUARDRAILS.md](docs/VERCEL_PRODUCTION_GUARDRAILS.md)                     | Headers, robots, firewall       |
+| [docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md](docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md) | Portable integration patterns   |
+| [docs/AGILE_V_PROTOCOL.md](docs/AGILE_V_PROTOCOL.md)                                             | Project planning protocol       |
+| [SECURITY.md](SECURITY.md)                                                                       | Private vulnerability reporting |
 
 ---
 
-## 🤝 Contributing
+## Known Limitations
 
-This is an **open-source project** and contributions are welcome! Whether you want to:
-
-- 🐛 Fix bugs
-- ✨ Add new features
-- 📚 Improve documentation
-- 🎨 Enhance UI/UX
-- ⚡ Optimize performance
-- 🔧 Refactor code
-- 🌍 Add translations
-- 💡 Suggest improvements
-
-**Feel free to:**
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** with proper TypeScript types and linting
-4. **Commit your changes** (`git commit -m 'Add some amazing feature'`)
-5. **Push to the branch** (`git push origin feature/amazing-feature`)
-6. **Open a Pull Request**
-
-### Development Guidelines
-
-- Use **TypeScript** with proper type definitions
-- Follow **ESLint** rules (run `npm run lint`)
-- Write **clear commit messages**
-- Add **comments** for complex logic
-- Test your changes before submitting
-- Update **documentation** if needed
-
-### Ideas for Contributions
-
-- Add support for more AI models
-- Implement voice input/output
-- Add multi-language support
-- Create additional UI themes
-- Improve mobile responsiveness
-- Add analytics integration
-- Enhance error handling
-- Add unit/integration tests
-- Optimize bundle size
-- Add more customization options
-
-**Together, we can take this project to the next level!** 🚀
+| Item              | Status                                                     |
+| ----------------- | ---------------------------------------------------------- |
+| API rate limiting | Not implemented at HTTP layer (AI layer has 429 fast-skip) |
+| Feedback email    | Logs only — no Resend/SendGrid yet                         |
+| PostHog analytics | Documented as optional template, not wired in code         |
+| Large FAQ corpora | In-memory cosine scan — migrate to vector DB at scale      |
 
 ---
 
-## 📝 Conclusion
+## Keywords
 
-This project demonstrates a production-ready implementation of an AI chatbot widget with RAG capabilities, built with Next.js and modern React patterns. It showcases:
+`RAG` · `Retrieval Augmented Generation` · `Next.js App Router` · `Edge Runtime` · `Server-Sent Events` · `SSE streaming` · `Upstash Redis` · `vector search` · `cosine similarity` · `embeddings` · `Google Gemini` · `OpenRouter` · `Groq` · `Hugging Face` · `chatbot widget` · `embeddable widget` · `portfolio chatbot` · `TanStack Query` · `React 19` · `TypeScript` · `Tailwind CSS` · `self-hosted AI` · `FAQ bot` · `Sentry tunnel` · `open source`
 
-- **Modern Architecture**: Next.js App Router, Edge Runtime, React Server Components
-- **Best Practices**: TypeScript, TanStack Query, proper error handling
-- **Performance**: Edge Runtime, streaming responses, optimistic UI
-- **Reliability**: Multiple fallback chains for AI models and embeddings
-- **Scalability**: Redis for vector storage, efficient cosine similarity search
-- **Developer Experience**: Well-documented, type-safe, reusable components
+---
 
-The codebase is well-documented and structured for easy understanding and extension. Each component can be reused independently in other projects.
+## Conclusion
+
+This project demonstrates a **complete, deployable RAG chatbot** you can host yourself, customize with your own FAQs, and embed anywhere. The architecture prioritizes **reliability** (multi-provider fallbacks), **performance** (Edge streaming), and **developer experience** (typed hooks, clear API routes, portable docs).
+
+Fork it, swap `lib/faqs.ts`, adjust branding env vars, and you have a production-grade assistant for your portfolio or product docs.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). Feel free to use, modify, and distribute the code as per the terms of the license.
 
 ---
 
@@ -930,10 +680,6 @@ The codebase is well-documented and structured for easy understanding and extens
 
 This is an **open-source project** - feel free to use, enhance, and extend this project further!
 
-If you have any questions, want to contribute, or want to share your work, reach out via GitHub or my portfolio at [https://www.arnobmahmud.com/](https://www.arnobmahmud.com/).
+If you have any questions or want to share your work, reach out via GitHub or my portfolio at [https://www.arnobmahmud.com](https://www.arnobmahmud.com).
 
-**Enjoy building and learning!** 🚀
-
-Thank you! 😊
-
----
+**Security:** Please report vulnerabilities privately via [SECURITY.md](SECURITY.md) → [contact@arnobmahmud.com](mailto:contact@arnobmahmud.com).

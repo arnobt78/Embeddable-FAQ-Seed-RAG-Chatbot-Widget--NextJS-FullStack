@@ -50,14 +50,9 @@ export default function Home() {
             View on GitHub
           </a>
           <span>•</span>
-          <a
-            href="/api/seed"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-black dark:hover:text-zinc-50"
-          >
-            Seed API
-          </a>
+          <span className="text-zinc-500">
+            Seed: POST /api/seed with SEED_SECRET (see README)
+          </span>
         </div>
       </main>
     </div>

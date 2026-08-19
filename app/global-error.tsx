@@ -1,0 +1,32 @@
+"use client";
+
+/**
+ * Global error boundary — captures unhandled React render errors to Sentry.
+ * Does not affect chat widget query cache or API behavior.
+ */
+
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <html lang="en">
+      <body>
+        <h2>Something went wrong</h2>
+        <button type="button" onClick={() => reset()}>
+          Try again
+        </button>
+      </body>
+    </html>
+  );
+}

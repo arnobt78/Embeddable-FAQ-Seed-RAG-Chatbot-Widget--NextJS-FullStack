@@ -30,7 +30,7 @@ export default function RootLayout({
   const chatbotPlaceholder = process.env.CHATBOT_PLACEHOLDER || "Message...";
   
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* CRITICAL: This script MUST be FIRST and runs before ANY CSS or rendering */}
         {/* It reads localStorage and sets theme immediately to prevent flash */}

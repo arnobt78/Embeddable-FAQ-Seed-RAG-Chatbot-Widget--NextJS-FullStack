@@ -1,17 +1,23 @@
-// NextRequest not used in this route
 import { faqs } from '@/lib/faqs';
 import { generateEmbeddings } from '@/lib/embeddings';
 import { storeVector } from '@/lib/redis';
+import { verifySeedSecret } from '@/lib/auth/seed-auth';
 
-export const runtime = 'nodejs'; // Use Node.js runtime for longer operations
+export const runtime = 'nodejs';
 
-export async function POST() {
+export async function POST(req: Request) {
+  const auth = verifySeedSecret(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.message }), {
+      status: auth.status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
-    // Generate embeddings for all FAQs
     const texts = faqs.map(([q, a]) => `${q} ${a}`);
     const embeddings = await generateEmbeddings(texts);
 
-    // Store vectors in Redis
     for (let i = 0; i < faqs.length; i++) {
       const [question, answer] = faqs[i];
       await storeVector(`faq-${i + 1}`, embeddings[i], {
@@ -52,7 +58,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-seed-secret',
     },
   });
 }

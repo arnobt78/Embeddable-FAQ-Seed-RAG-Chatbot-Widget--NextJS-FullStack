@@ -324,7 +324,7 @@ function bind(){
   if(form)form.onsubmit=send;
   if(menuBtn)menuBtn.onclick=e=>{e.stopPropagation();menu=!menu;if(dropdown)dropdown.style.display=menu?'block':'none';};
   if(themeBtn)themeBtn.onclick=()=>{dark=!dark;theme();menu=0;if(dropdown)dropdown.style.display='none';};
-  if(clearBtn)clearBtn.onclick=()=>{msgs=[];draw();menu=0;if(dropdown)dropdown.style.display='none';};
+  if(clearBtn)clearBtn.onclick=()=>{menu=0;if(dropdown)dropdown.style.display='none';clearHistory();};
   document.onclick=()=>{if(menu){menu=0;if(dropdown)dropdown.style.display='none';}};
 }
 
@@ -551,6 +551,16 @@ async function load(){
       }
     }
   }catch{}
+}
+
+/** Clear server session + local messages (syncs with React widget behavior) */
+async function clearHistory(){
+  try{
+    const r=await fetch(C.u+'/api/history',{method:'DELETE',credentials:'include'});
+    if(!r.ok){console.warn('Clear chat failed:',r.status);return;}
+    msgs=[];
+    draw();
+  }catch(e){console.warn('Clear chat error:',e);}
 }
 
 // Initialize when body is available

@@ -2,15 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 import { toast } from "@/components/ui/toast";
+import { chatHistoryQueryKey } from "@/lib/query-keys";
 
 const CHATBOT_BASE_URL =
   typeof window !== "undefined"
     ? window.CHATBOT_BASE_URL || window.location.origin
     : "";
 
-/**
- * Fetch chat history from API
- */
+/** Fetch chat history from API */
 async function fetchHistory(): Promise<ChatMessage[]> {
   const response = await fetch(`${CHATBOT_BASE_URL}/api/history`, {
     credentials: "include",
@@ -22,9 +21,18 @@ async function fetchHistory(): Promise<ChatMessage[]> {
   return data.messages || [];
 }
 
-/**
- * Send a message to the chat API and stream the response
- */
+/** DELETE server session and expire cookie */
+async function clearHistoryOnServer(): Promise<void> {
+  const response = await fetch(`${CHATBOT_BASE_URL}/api/history`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to clear chat on server");
+  }
+}
+
+/** Send a message to the chat API and stream the response */
 async function sendMessage(
   message: string,
   onChunk: (chunk: string) => void
@@ -66,7 +74,7 @@ async function sendMessage(
           throw new Error(parsed.error);
         }
       } catch {
-        // Skip invalid JSON
+        // Skip invalid JSON lines in stream
       }
     }
   }
@@ -76,34 +84,31 @@ async function sendMessage(
 
 /**
  * React hook for managing chat functionality
- * Provides chat history, sending messages, and real-time updates
+ * Provides chat history, sending messages, and server-synced clear
  */
 export function useChat() {
   const queryClient = useQueryClient();
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
 
-  // Query for chat history
   const {
     data: messages = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["chat-history"],
+    queryKey: chatHistoryQueryKey,
     queryFn: fetchHistory,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
     refetchOnWindowFocus: false,
-    retry: 1, // Retry once on failure
-    refetchOnMount: true, // Fetch on mount
+    retry: 1,
+    refetchOnMount: true,
   });
 
-  // Mutation for sending messages
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       setIsStreaming(true);
       setStreamingMessage("");
-      
-      // Create user message with unique timestamp for stable key
+
       const timestamp = Date.now();
       const userMessage: ChatMessage = {
         role: "user",
@@ -111,13 +116,11 @@ export function useChat() {
         timestamp,
       };
 
-      // Optimistic update: add user message immediately for instant UI feedback
-      queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old) => {
+      queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, (old) => {
         const existing = old || [];
-        // Avoid duplicates by checking last message
         const lastMsg = existing[existing.length - 1];
         if (lastMsg?.role === "user" && lastMsg?.content === message) {
-          return existing; // Already added
+          return existing;
         }
         return [...existing, userMessage];
       });
@@ -130,37 +133,30 @@ export function useChat() {
           setStreamingMessage(fullResponse);
         });
 
-        // Add assistant response to cache
         const assistantMessage: ChatMessage = {
           role: "assistant",
           content: fullResponse,
-          timestamp: timestamp + 1, // Use timestamp from user message + 1 for ordering
+          timestamp: timestamp + 1,
         };
 
-        // Update cache with final assistant message (user message already added optimistically)
-        queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old) => {
+        queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, (old) => {
           if (!old) return [userMessage, assistantMessage];
-          
-          // Find user message index (should be last message)
+
           const userMsgIndex = old.findIndex(
             (msg) => msg.role === "user" && msg.timestamp === timestamp
           );
-          
+
           if (userMsgIndex >= 0) {
-            // Remove any partial assistant messages that might exist and add final one
-            const updated = old.slice(0, userMsgIndex + 1); // Keep everything up to and including user message
-            // Remove any assistant messages that might have been added during streaming
+            const updated = old.slice(0, userMsgIndex + 1);
             return [...updated, assistantMessage];
           }
-          
-          // Fallback: user message not found, add both
+
           return [...old, userMessage, assistantMessage];
         });
 
         return assistantMessage;
       } catch (error) {
-        // Remove user message on error
-        queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old) => {
+        queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, (old) => {
           if (!old) return old;
           return old.filter((msg) => msg.timestamp !== userMessage.timestamp);
         });
@@ -177,16 +173,30 @@ export function useChat() {
     },
   });
 
-  // Clear chat history
-  const clearChat = useCallback(() => {
-    queryClient.setQueryData<ChatMessage[]>(["chat-history"], []);
-    toast.info("Chat cleared");
-  }, [queryClient]);
+  const clearChatMutation = useMutation({
+    mutationFn: clearHistoryOnServer,
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: chatHistoryQueryKey });
+      const previousMessages =
+        queryClient.getQueryData<ChatMessage[]>(chatHistoryQueryKey) ?? [];
+      queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, []);
+      return { previousMessages };
+    },
+    onSuccess: () => {
+      queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, []);
+      toast.success("Chat cleared");
+    },
+    onError: (error: Error, _vars, context) => {
+      if (context?.previousMessages) {
+        queryClient.setQueryData(chatHistoryQueryKey, context.previousMessages);
+      }
+      toast.error("Failed to clear chat", error.message);
+    },
+  });
 
-  // Add message manually (for optimistic updates)
   const addMessage = useCallback(
     (message: ChatMessage) => {
-      queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old) => {
+      queryClient.setQueryData<ChatMessage[]>(chatHistoryQueryKey, (old) => {
         const existing = old || [];
         return [...existing, message];
       });
@@ -201,8 +211,10 @@ export function useChat() {
     sendMessage: sendMessageMutation.mutate,
     isSending: sendMessageMutation.isPending || isStreaming,
     streamingMessage,
-    clearChat,
+    clearChat: clearChatMutation.mutate,
+    isClearing: clearChatMutation.isPending,
     addMessage,
-    refetch: () => queryClient.invalidateQueries({ queryKey: ["chat-history"] }),
+    refetch: () =>
+      queryClient.invalidateQueries({ queryKey: chatHistoryQueryKey }),
   };
 }

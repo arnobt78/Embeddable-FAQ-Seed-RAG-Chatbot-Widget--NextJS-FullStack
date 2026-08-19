@@ -1,47 +1,33 @@
 import { NextRequest } from "next/server";
+import { getCorsHeaders } from "@/lib/api/cors";
+import { feedbackPostBodySchema, formatZodError } from "@/lib/schemas";
 
 export const runtime = "edge";
 
+const FEEDBACK_METHODS = "POST, OPTIONS";
+
 /**
- * POST /api/feedback
- * Handles feedback and issue reports
- * Sends email notification and tracks via Google Analytics
+ * POST /api/feedback — feedback and issue reports (email integration TBD)
  */
 export async function POST(req: NextRequest) {
+  const origin = req.headers.get("origin");
+
   try {
-    const body = await req.json() as {
-      type: "feedback" | "issue";
-      rating?: number;
-      comment?: string;
-      email?: string;
-    };
+    const body: unknown = await req.json();
+    const parsed = feedbackPostBodySchema.safeParse(body);
 
-    const { type, rating, comment, email } = body;
-
-    if (!type || (type === "feedback" && !rating)) {
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: "Invalid feedback data" }),
+        JSON.stringify({ error: formatZodError(parsed.error) }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: getCorsHeaders(origin, FEEDBACK_METHODS),
         }
       );
     }
 
-    // Track via Google Analytics (if available)
-    if (typeof window !== "undefined") {
-      const win = window as Window;
-      if (win.gtag) {
-        win.gtag("event", "chatbot_feedback", {
-          event_category: "Chatbot",
-          event_label: type,
-          value: rating || 0,
-        });
-      }
-    }
+    const { type, rating, comment, email } = parsed.data;
 
-    // Send email notification (using a service like Resend, SendGrid, etc.)
-    // For now, we'll log it. You can integrate with your email service
     const emailData = {
       to: process.env.FEEDBACK_EMAIL || "arnob@example.com",
       subject: `Chatbot ${type === "feedback" ? "Feedback" : "Issue Report"}`,
@@ -53,53 +39,31 @@ ${email ? `Email: ${email}` : ""}
       `.trim(),
     };
 
-    // TODO: Integrate with email service (Resend, SendGrid, etc.)
     console.log("Feedback received:", emailData);
 
-    const origin = req.headers.get('origin');
-    const allowedOrigin = origin || '*';
-    
     return new Response(
       JSON.stringify({ success: true, message: "Thank you for your feedback!" }),
       {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": allowedOrigin,
-          "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Cookie",
-        },
+        headers: getCorsHeaders(origin, FEEDBACK_METHODS),
       }
     );
   } catch (error) {
     console.error("Feedback error:", error);
-    const origin = req.headers.get('origin');
-    const allowedOrigin = origin || '*';
     return new Response(
       JSON.stringify({ error: "Failed to submit feedback" }),
       {
         status: 500,
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": allowedOrigin,
-          "Access-Control-Allow-Credentials": "true",
-        },
+        headers: getCorsHeaders(origin, FEEDBACK_METHODS),
       }
     );
   }
 }
 
 export async function OPTIONS(req: NextRequest) {
-  const origin = req.headers.get('origin');
-  const allowedOrigin = origin || '*';
+  const origin = req.headers.get("origin");
   return new Response(null, {
     status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": allowedOrigin,
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Cookie",
-    },
+    headers: getCorsHeaders(origin, FEEDBACK_METHODS),
   });
 }
