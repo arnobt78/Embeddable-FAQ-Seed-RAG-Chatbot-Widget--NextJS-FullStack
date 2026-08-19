@@ -263,9 +263,104 @@ What to watch:
 - [ ] Safe image fallback pattern applied where needed (`docs/SAFE_IMAGE_REUSABLE_COMPONENT.md`)
 - [ ] API responses minimized (no unnecessary fields, no duplicate calls)
 - [ ] T+15m and T+1h observability checks completed after deploy
+- [ ] Build log hygiene: `NEXT_TELEMETRY_DISABLED=1`, Sentry `silent` + `telemetry: false` (Section 8)
 
 ---
 
-## This repo (BookWise / university-library)
+## 8) Deploy Build Log Hygiene (Vercel / CI)
 
-SSR/API-heavy library app. **Dashboard-only:** Bot Protection = Challenge, AI Bots = Deny, Attack Mode off (redeploy not required for firewall toggles). **Code owns:** `app/robots.ts` (catalog SEO + AI UA block; no `public/robots.txt`), security headers + `/_next/static` immutable in `next.config.ts` and mirrored in `vercel.json` (cron kept), CSP `img-src` includes `robohash.org`, root `<html data-scroll-behavior="smooth">`. Redis rate limits and `CRON_SECRET` remain app-level. Enterprise OWASP Core Ruleset / BotID SDK out of scope unless metrics demand them.
+Firewall and security headers are **runtime** guardrails. This section covers **build-time log noise** — reducing clutter without disabling Sentry, source maps, or security headers.
+
+### Next.js build script
+
+Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build"
+  }
+}
+```
+
+Disables the anonymous Next.js telemetry opt-out banner in Vercel logs. Does not affect app behavior or error reporting.
+
+### Sentry webpack plugin (`next.config.ts`)
+
+When using `@sentry/nextjs` with `withSentryConfig`, prefer quiet CI output:
+
+```typescript
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  tunnelRoute: "/api/monitoring",
+  silent: true,
+  telemetry: false,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+});
+```
+
+| Setting | Safe? | Effect |
+|---------|-------|--------|
+| `silent: true` | Yes | Hides per-file source map upload spam; **upload still runs** when `SENTRY_AUTH_TOKEN` is set |
+| `telemetry: false` | Yes | Disables Sentry plugin telemetry message only |
+| `deleteSourcemapsAfterUpload: true` | Yes (recommended) | Maps go to Sentry, not public deploy artifacts |
+
+**Avoid** `silent: !process.env.CI` on Vercel — `CI=1` makes builds **noisier**, not quieter.
+
+Full Sentry + npm details: `docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md` → Step 6b.
+
+### npm install noise (npm 11+)
+
+Optional `package.json` whitelist for trusted postinstall scripts:
+
+```json
+{
+  "allowScripts": {
+    "@sentry/cli": true,
+    "sharp": true,
+    "unrs-resolver": true,
+    "fsevents": true
+  }
+}
+```
+
+Optional `.npmrc`:
+
+```
+fund=false
+```
+
+Optional postinstall to silence Browserslist staleness warnings:
+
+```json
+{
+  "scripts": {
+    "postinstall": "update-browserslist-db --quiet"
+  },
+  "devDependencies": {
+    "update-browserslist-db": "^1.2.3"
+  }
+}
+```
+
+### Expected build warnings (not failures)
+
+These may appear after enabling Section 1 security headers or using Edge API routes:
+
+| Warning | Cause | Action |
+|---------|-------|--------|
+| `Custom Cache-Control headers detected for /_next/static/(.*)` | Immutable cache header from Section 1 | **Keep** — intentional bot/cache guardrail |
+| `The Edge Runtime is deprecated` | Next.js 16.3+ notice for `runtime = "edge"` routes | Informational; migrate to Node runtime only when ready |
+| `Using edge runtime on a page currently disables static generation` | Edge API routes (`/api/*`) | Expected for serverless edge handlers |
+
+Do not remove `/_next/static` Cache-Control to silence the warning — that re-opens bot re-fetch churn (see incident table at top).
+
+---
+
+## This repo (portfolio-chatbot-widget)
+
+SSR/API-heavy RAG chatbot widget. **Dashboard-only:** Bot Protection = Challenge, AI Bots = Deny, Attack Mode off. **Code owns:** `app/robots.ts` (disallow `/api/` for crawlers), security headers + `/_next/static` immutable in `next.config.ts`, Sentry tunnel `/api/monitoring` with quiet build flags (`silent: true`, `telemetry: false`), `NEXT_TELEMETRY_DISABLED=1` on build. Edge routes: `/api/chat`, `/api/history`, `/api/feedback`. `SEED_SECRET` protects `POST /api/seed` at app layer (Wave 2: HTTP rate limits). Build log hygiene: Section 8 + Sentry Step 6b in `docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md`.

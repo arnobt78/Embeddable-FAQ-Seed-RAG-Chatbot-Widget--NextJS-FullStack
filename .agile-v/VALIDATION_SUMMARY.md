@@ -79,22 +79,24 @@ Routes:
 
 ---
 
-## Post-implementation (Wave 1 seed + clear chat — 2026-08-20)
+## Post-implementation (deps + build hygiene — 2026-08-20)
 
 | Check | Command | Result | Notes |
 |-------|---------|--------|-------|
 | Lint | `npm run lint` | PASS | |
-| Build | `npm run build` | PASS | |
-| Seed auth | manual | NOT RUN | 401 without header; 503 without SEED_SECRET env |
-| Clear chat persist | manual | NOT RUN | DELETE /api/history + refresh empty |
+| Build | `npm run build` | PASS | Next.js 16.3.1 Turbopack |
+| Audit | `npm audit` | PASS | 0 vulnerabilities |
+| Prod seed | browser fetch | PASS | `{ success: true, count: 20 }` |
+| Prod chat SSE | browser fetch | PASS | RAG stream OK |
+| Prod clear chat | DELETE + refresh | PASS | Empty history |
+| Seed auth 401 | no Bearer | PASS | Unauthorized |
+| Cold curl seed | terminal | 429 | Expected with Bot Challenge |
 
 ---
 
 ## Post-implementation (pending)
 
-Record here after each approved wave:
-
-- [ ] Wave 1 validation
+- [x] Wave 1 validation
 - [ ] Wave 2 validation
 - [ ] Wave 3 validation
 

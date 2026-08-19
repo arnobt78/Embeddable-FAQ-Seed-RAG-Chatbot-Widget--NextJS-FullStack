@@ -380,6 +380,37 @@ curl -X POST https://your-domain.com/api/seed \
 
 **Customize FAQs:** Edit the `faqs` array in `lib/faqs.ts` — each entry is `[question, answer]`.
 
+### Production re-seed (Vercel Bot Protection)
+
+With **Bot Protection = Challenge** enabled (recommended), raw `curl` from a cold terminal may return **429**. Reseed is **not blocked** — use one of these:
+
+**Option A — Browser DevTools (easiest, no firewall changes)**
+
+1. Open [https://portfolio-chatbot-widget.vercel.app](https://portfolio-chatbot-widget.vercel.app) in Safari/Chrome.
+2. DevTools → Console:
+
+```javascript
+fetch('/api/seed', {
+  method: 'POST',
+  headers: { Authorization: 'Bearer YOUR_SEED_SECRET' }
+}).then(r => r.json()).then(console.log)
+// Expected: { success: true, count: 20 }
+```
+
+**Option B — Terminal curl (same machine)**
+
+1. Visit the site in a browser first (passes the Vercel challenge cookie).
+2. Then run:
+
+```bash
+curl -X POST https://portfolio-chatbot-widget.vercel.app/api/seed \
+  -H "Authorization: Bearer $SEED_SECRET"
+```
+
+**Option C — Automated cron/CI only (optional)**
+
+Add a Vercel Firewall exception for `POST /api/seed` if you need hands-off reseed without a browser visit. Not required for normal use.
+
 ---
 
 ## Usage & Embedding
@@ -603,7 +634,7 @@ Vector search uses in-process cosine similarity over all FAQ keys (fine for ~20�
 2. Import repo in [vercel.com](https://vercel.com)
 3. Add all env vars from `.env.example`
 4. Deploy — Node 24 picked up via `engines` field
-5. Post-deploy: `curl -X POST https://your-app.vercel.app/api/seed -H "Authorization: Bearer $SEED_SECRET"`
+5. Post-deploy: re-seed using [Production re-seed](#production-re-seed-vercel-bot-protection) (browser DevTools or curl after visiting site)
 6. Set `NEXT_PUBLIC_CHATBOT_URL` to your Vercel URL
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full steps including Vercel Firewall (Bot Challenge + AI Bots Deny).

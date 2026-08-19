@@ -36,7 +36,8 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
   tunnelRoute: "/api/monitoring",
-  silent: !process.env.CI,
+  silent: true,
+  telemetry: false,
   widenClientFileUpload: true,
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,

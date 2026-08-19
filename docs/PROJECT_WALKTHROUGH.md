@@ -14,7 +14,7 @@ Self-hosted **RAG FAQ chatbot**: embeddable widget, Redis vector search, SSE str
 
 ```bash
 npm install
-cp .env.example .env.local   # set UPSTASH, GEMINI, HF, SEED_SECRET
+cp .env.example .env.local   # UPSTASH, GEMINI, HF, SEED_SECRET
 npm run dev
 curl -X POST http://localhost:3000/api/seed -H "Authorization: Bearer $SEED_SECRET"
 ```
@@ -34,19 +34,20 @@ curl -X POST http://localhost:3000/api/seed -H "Authorization: Bearer $SEED_SECR
 
 ## Data flow (chat)
 
-1. Client sends message → `POST /api/chat`
-2. RAG: embed query → cosine search FAQ vectors in Redis
-3. LLM stream with FAQ context → SSE to client
-4. Save messages to `chat:session:{id}` in Redis
+1. Client → `POST /api/chat` (Zod `{ message }`)
+2. RAG embed + cosine search → Redis FAQ vectors
+3. LLM SSE stream → client
+4. Persist `chat:session:{id}` in Redis
 
 ---
 
-## Frontend state
+## Frontend state (TanStack Query)
 
-- **TanStack Query:** `chatHistoryQueryKey` = `["chat-history"]` in `lib/query-keys.ts`
-- **Send:** optimistic user msg → stream → cache update
+- Single key: `chatHistoryQueryKey` = `["chat-history"]` in `lib/query-keys.ts`
+- **Send:** optimistic user msg → stream → `setQueryData`
 - **Clear:** optimistic empty → `DELETE /api/history` → rollback on error
-- **Settings:** `widget-settings-context` + localStorage (theme, font, position)
+- **Settings:** `widget-settings-context` + localStorage (not server CRUD)
+- No global densify mesh — only one server data domain (chat history); appropriate for widget scope
 
 ---
 
@@ -55,10 +56,11 @@ curl -X POST http://localhost:3000/api/seed -H "Authorization: Bearer $SEED_SECR
 ```
 lib/auth/seed-auth.ts      # timing-safe SEED_SECRET
 lib/session-cookie.ts      # chatbot_session helpers
-lib/api/cors.ts            # embed CORS headers
+lib/api/cors.ts            # embed CORS (reflect Origin — allowlist Wave 2)
 lib/schemas.ts             # Zod chat + feedback
 lib/redis.ts               # get/save/deleteSession, vectors
 hooks/use-chat.ts          # chat hook + mutations
+public/widget.js           # vanilla embed + DELETE clear
 ```
 
 ---
@@ -69,22 +71,37 @@ hooks/use-chat.ts          # chat hook + mutations
 |------|---------------------|
 | Seed secret auth | HTTP rate limiting |
 | HttpOnly session cookie | Production CORS allowlist |
-| Sentry + tunnel | JWT / user auth |
-| Security headers | SHA session encryption |
-| Zod on chat/feedback | Zod on all routes |
+| Sentry + tunnel + quiet build | JWT / user auth |
+| Security headers + robots | SHA session encryption |
+| Zod chat/feedback | Zod seed/history |
+
+---
+
+## Build / deploy hygiene
+
+- `NEXT_TELEMETRY_DISABLED=1` in build script
+- Sentry: `silent: true`, `telemetry: false`, `deleteSourcemapsAfterUpload`
+- `.npmrc` fund=false · `allowScripts` whitelist · browserslist postinstall
+- See `docs/VERCEL_PRODUCTION_GUARDRAILS.md` §8, Sentry guide Step 6b
+
+---
+
+## Production re-seed
+
+Bot Protection may 429 cold curl. Use browser DevTools `fetch('/api/seed', …)` or visit site then curl. README § Production re-seed.
 
 ---
 
 ## Deploy checklist
 
-1. Vercel env: all `.env.example` vars + **`SEED_SECRET`**
-2. Deploy → seed with Bearer secret
-3. Set `NEXT_PUBLIC_CHATBOT_URL`
-4. Vercel Firewall: Bot Challenge, AI Bots Deny (see `docs/DEPLOYMENT.md`)
-5. Smoke: chat, clear chat + refresh, Sentry event
+1. Vercel env: `.env.example` + **`SEED_SECRET`**
+2. Deploy → reseed (README methods)
+3. `NEXT_PUBLIC_CHATBOT_URL`
+4. Firewall: Bot Challenge, AI Bots Deny
+5. Smoke: chat, clear + refresh, Sentry
 
 ---
 
 ## Agent resume
 
-Read order: `.agile-v/STATE.md` → `CLAUDE.md` → this file → source for truth.
+`.agile-v/STATE.md` → `CLAUDE.md` → this file → source code.

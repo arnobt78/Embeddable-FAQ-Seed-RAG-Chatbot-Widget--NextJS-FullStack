@@ -103,3 +103,29 @@
 | Decision | Wire `@sentry/nextjs` with `tunnelRoute: "/api/monitoring"` in `withSentryConfig`; client `tunnel` option matches; no replay integration; tracesSampleRate 0.1 prod / 1.0 dev; init via instrumentation hooks (no layout client conversion) |
 | Rationale | Ad blockers block `*.ingest.sentry.io`; same-origin POST via Next.js rewrite bypasses blockers without manual API route; lean config preserves widget performance on free tier |
 | Status | ACCEPTED |
+
+---
+
+## DEC-0008 — Wave 1 scope; defer JWT/SHA/global invalidation mesh
+
+| Field | Value |
+|-------|-------|
+| Date | 2026-08-20 |
+| Agent | audit / implementation session |
+| Requirement | REQ-0003, REQ-0004, REQ-0005 |
+| Decision | Single TanStack key for chat history only; no JWT; no SHA session encrypt; rate limit + CORS allowlist → Wave 2 |
+| Rationale | FAQ widget has one CRUD domain (session messages); HttpOnly cookie + SEED_SECRET sufficient for v1 |
+| Status | ACCEPTED |
+
+---
+
+## DEC-0009 — Quiet CI/Vercel build logs
+
+| Field | Value |
+|-------|-------|
+| Date | 2026-08-20 |
+| Agent | deps session |
+| Requirement | REQ-0013 |
+| Decision | Sentry `silent: true` + `telemetry: false`; NEXT_TELEMETRY_DISABLED; npm allowScripts whitelist |
+| Rationale | Source maps still upload; reduces deploy log noise without reducing observability |
+| Status | ACCEPTED |

@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-08-20 — Deps, build hygiene, prod smoke
+
+### Changed
+- Next 16.3.1, React 19.2.8, ai SDK patches; 0 npm audit vulns
+- Quiet builds: Sentry silent/telemetry off, NEXT_TELEMETRY_DISABLED, `.npmrc`, allowScripts, browserslist postinstall
+- Docs: README prod reseed, VERCEL §8, Sentry Step 6b
+
+### Removed
+- Unused deps: `@upstash/qstash`, `@ai-sdk/google`
+
+### Verified
+- Lint PASS, build PASS, prod seed/chat/clear smoke PASS
+
+---
+
 ## 2026-08-20 — Wave 1 + docs
 
 ### Added

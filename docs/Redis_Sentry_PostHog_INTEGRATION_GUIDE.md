@@ -3,7 +3,7 @@
 > **Purpose:** Portable reference for Next.js 15+ App Router projects  
 > **Reusable:** Attach this file to any project and follow section-by-section  
 > **Stack:** Node 18+, Next.js App Router, Upstash Redis, `@sentry/nextjs` v10+, optional PostHog  
-> **Last updated:** 2026-08-19
+> **Last updated:** 2026-08-20
 
 ---
 
@@ -410,7 +410,8 @@ export default withSentryConfig(nextConfig, {
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
   tunnelRoute: "/api/monitoring",
-  silent: !process.env.CI,
+  silent: true,
+  telemetry: false,
   widenClientFileUpload: true,
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,
@@ -436,6 +437,86 @@ npm run build
 
 Works in normal browser + incognito when ad blockers are enabled.  
 `robots.txt` disallowing `/api/` affects **crawlers only**, not browser SDK POSTs.
+
+---
+
+### Step 6b: Quiet Vercel / CI builds (recommended)
+
+Sentry source map upload and Next.js telemetry can flood deploy logs without adding runtime value. Keep uploads enabled; reduce **log noise only**.
+
+#### `next.config.ts` — Sentry webpack plugin
+
+| Option | Value | Why |
+|--------|-------|-----|
+| `silent` | `true` | Suppresses per-file source map upload reports in Vercel/CI logs |
+| `telemetry` | `false` | Disables Sentry webpack-plugin telemetry banner during build |
+| `sourcemaps.deleteSourcemapsAfterUpload` | `true` | **Security:** maps upload to Sentry, then are removed from the deploy artifact |
+| `tunnelRoute` | `"/api/monitoring"` | Unchanged — runtime tunnel still works |
+| `authToken` + org/project | Set on Vercel | Source maps **still upload** when token is present; logs are just quieter |
+
+```typescript
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  tunnelRoute: "/api/monitoring",
+  silent: true,
+  telemetry: false,
+  widenClientFileUpload: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+  },
+});
+```
+
+**Do not** set `silent: !process.env.CI` if you want quiet Vercel builds — on Vercel `CI=1`, that makes logs **more** verbose.
+
+#### `package.json` — Next.js telemetry + npm install noise
+
+```json
+{
+  "scripts": {
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "postinstall": "update-browserslist-db --quiet"
+  },
+  "allowScripts": {
+    "@sentry/cli": true,
+    "sharp": true,
+    "unrs-resolver": true,
+    "fsevents": true
+  },
+  "devDependencies": {
+    "update-browserslist-db": "^1.2.3"
+  }
+}
+```
+
+| Setting | Purpose |
+|---------|---------|
+| `NEXT_TELEMETRY_DISABLED=1` | Removes Next.js anonymous telemetry banner from build output |
+| `postinstall` + `update-browserslist-db` | Refreshes `caniuse-lite`; avoids “browsers data is N months old” warning |
+| `allowScripts` (npm 11+) | Whitelists trusted postinstall scripts (`@sentry/cli`, `sharp`, etc.) — reduces `npm warn allow-scripts` noise |
+
+#### `.npmrc` (optional)
+
+```
+fund=false
+```
+
+Suppresses `npm fund` messages in CI. Does not affect installs or security.
+
+#### Expected warnings you can ignore (this repo)
+
+| Log line | Meaning |
+|----------|---------|
+| `Custom Cache-Control headers detected for /_next/static/(.*)` | Intentional immutable caching (see `docs/VERCEL_PRODUCTION_GUARDRAILS.md`) — safe in production |
+| `The Edge Runtime is deprecated` | Informational on Next.js 16.3+ when API routes use `export const runtime = "edge"` |
+| `Using edge runtime on a page currently disables static generation` | Expected for Edge API routes (`/api/chat`, `/api/history`, etc.) |
+
+These are **not** Sentry or observability failures.
 
 ---
 
@@ -642,6 +723,8 @@ PostHog ingest domains can be blocked like Sentry. For production, consider a [r
 - [ ] Create `instrumentation.ts` with `register` + `onRequestError`
 - [ ] Create `instrumentation-client.ts` with tunnel + `onRouterTransitionStart`
 - [ ] Wrap `next.config.ts` with `withSentryConfig` + `tunnelRoute: "/api/monitoring"`
+- [ ] Set `silent: true` and `telemetry: false` for quiet CI/Vercel builds (Step 6b)
+- [ ] Set `NEXT_TELEMETRY_DISABLED=1` on build script; optional `.npmrc` + `allowScripts`
 - [ ] Create `app/global-error.tsx`
 - [ ] Verify tunnel rewrite in `.next/routes-manifest.json` after build
 - [ ] Set Vercel env vars for production + source maps
@@ -667,6 +750,9 @@ PostHog ingest domains can be blocked like Sentry. For production, consider a [r
 | Tunnel 404 | Rebuild; check `routes-manifest.json` rewrites |
 | No client events | Set `NEXT_PUBLIC_SENTRY_DSN` on Vercel (must be present at **build** time for client bundle) |
 | No source maps | Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` in CI/Vercel |
+| Verbose Sentry upload log on Vercel | Set `silent: true` and `telemetry: false` in `withSentryConfig` (Step 6b) — uploads still run when token is set |
+| Next.js telemetry banner in build | Add `NEXT_TELEMETRY_DISABLED=1` to `build` script |
+| `Browserslist: browsers data is N months old` | Add `update-browserslist-db` postinstall (Step 6b) |
 | Too much noise (extensions) | Expand `lib/sentry-filters.ts`; enable Sentry Inbound Filters |
 | Sentry disabled locally | Expected when DSN empty — set DSN to test |
 

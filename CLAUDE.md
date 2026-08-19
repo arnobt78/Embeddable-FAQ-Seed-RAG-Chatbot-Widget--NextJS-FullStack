@@ -1,7 +1,7 @@
 # CLAUDE.md — Agent Memory (compact)
 
 ## Project
-**Name:** `portfolio-chatbot-widget` · RAG FAQ chatbot (Next.js 16, React 19, Upstash Redis, multi-AI fallbacks)  
+**Name:** `portfolio-chatbot-widget` · RAG FAQ chatbot (Next.js **16.3.1**, React 19.2.8, Upstash Redis)  
 **Live:** portfolio-chatbot-widget.vercel.app · arnobmahmud.com  
 **Cycle:** C1 · Resume: `.agile-v/STATE.md`
 
@@ -12,30 +12,30 @@ Next.js App Router · Edge (`/api/chat|history|feedback`) + Node (`/api/seed`) �
 Widget/`useChat` → `POST /api/chat` (SSE) → `lib/rag.ts` → `lib/ai/` → Redis session (`chatbot_session` cookie)
 
 ## Security (Wave 1 done)
-- **`SEED_SECRET` required** — `POST /api/seed` Bearer or `x-seed-secret` (`lib/auth/seed-auth.ts`)
-- **Clear chat** — `DELETE /api/history` + optimistic TanStack mutation (`chatHistoryQueryKey`)
-- Session: HttpOnly cookie · **No JWT** · **No HTTP rate limit yet** (Wave 2 REQ-0005)
+- **`SEED_SECRET`** — `POST /api/seed` Bearer/`x-seed-secret` (`lib/auth/seed-auth.ts`)
+- **Clear chat** — `DELETE /api/history` + optimistic TanStack (`chatHistoryQueryKey`)
+- HttpOnly session cookie · **No JWT** · **No SHA encrypt** · **No HTTP rate limit** (Wave 2)
+
+## Build hygiene
+`NEXT_TELEMETRY_DISABLED=1` · Sentry `silent: true` + `telemetry: false` · `.npmrc` fund=false · `allowScripts` whitelist · `postinstall: update-browserslist-db`
 
 ## Key libs
 | Path | Role |
 |------|------|
-| `lib/query-keys.ts` | `chatHistoryQueryKey` |
+| `lib/query-keys.ts` | `chatHistoryQueryKey` (single cache domain) |
 | `lib/session-cookie.ts` | Cookie parse/build/clear |
 | `lib/schemas.ts` | Zod chat + feedback |
 | `lib/ai/providers.ts` | AI fallback chain |
 | `lib/redis.ts` | Sessions, vectors, `deleteSession` |
 
-## Embeds
-React: `layout.tsx` + `ChatbotWidget` · External: `public/widget.js` + `CHATBOT_BASE_URL`
+## Prod reseed
+Bot Protection may 429 cold curl — use browser DevTools fetch or visit site then curl. See README § Production re-seed.
 
 ## Validation
-`npm run lint` · `npm run build` · Record in `.agile-v/VALIDATION_SUMMARY.md`
-
-## Docs
-`README.md` · `docs/PROJECT_WALKTHROUGH.md` · `docs/DEPLOYMENT.md` · `docs/Redis_Sentry_PostHog_INTEGRATION_GUIDE.md`
+`npm run lint` · `npm run build` · `npm audit` → 0 vulns (2026-08-20)
 
 ## Next (Wave 2)
-Rate limit `/api/chat` · CORS allowlist · full Zod on all routes · `npm test`
+Rate limit `/api/chat` · CORS allowlist · Zod all routes · `npm test`
 
 ## Rules
-Server-first layout · No duplicate query keys · Source code = truth · Wait approval for new waves
+Server-first · No duplicate query keys · Source = truth · Wait approval for new waves
